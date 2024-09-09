@@ -5,42 +5,62 @@
     <title>Title</title>
 
     <link rel="stylesheet" href="./leaflet/leaflet.css"/>
+    <link rel="stylesheet" href="./leaflet/src/Leaflet.NavBar.css"/>
+    <link rel="stylesheet" href="./leaflet/Control.MiniMap.min.css"/>
+    <link rel="stylesheet" href="./leaflet/Control.FullScreen.css"/>
+
     <script src="./leaflet/leaflet.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.7.1/jquery.js"></script>
     <script src="./leaflet/leaflet-ant-path.js" type="text/javascript"></script>
+    <script src="./leaflet/src/Leaflet.NavBar.js" type="text/javascript"></script>
+    <script src="./leaflet/Control.MiniMap.min.js" type="text/javascript"></script>
+    <script src="./leaflet/Control.FullScreen.js" type="text/javascript"></script>
 
 </head>
-<body>
-<div id='map' style="width:100%;min-height:600px;height:100%"></div>
-<div>
-    <button onclick="tag1()">流动效果</button>
-    <button onclick="tag2()">管线</button>
-</div>
+<body style="height: 100vh;margin: 0;">
+<div id='map' style="width:100%;height:100%"></div>
 <script>
+    <!--  地图基础配置  -->
     let myMap = L.map('map', {
-        center: [31.246318817138672, 118.16216468811035],
+        center: [31.246511936187744, 118.15956830978394],
         maxZoom: 24,
-        zoom: 15,   //缩放比列
+        zoom: 16,   //缩放比列
         crs: L.CRS.EPSG4326,
-        zoomControl: false, //禁用 + - 按钮
+        zoomControl: true, //禁用 + - 按钮
         doubleClickZoom: false,  // 禁用双击放大
         attribution: '',
-        attributionControl: false  // 移除右下角leaflet标识sxx
+        attributionControl: false,  // 移除右下角leaflet标识sxx
+        fullscreenControl: true,
+        fullscreenControlOptions: {
+            position: 'topleft'
+        }
     })
+    // 导航栏
+    const navBar = L.control.navbar({
+        position: 'topleft'
+    })
+    myMap.addControl(navBar)
+    // 比例尺
+    L.control.scale({
+        maxWidth: 200,
+        metric: true
+    }).addTo(myMap)
+
+
     myMap.on('click', (e) => {
         console.log(e)
     });
 
     function addSST() {	//加载天地图
         let tiandituLayer = L.tileLayer(
-            "http://t0.tianditu.gov.cn/vec_c/wmts?layer=vec&style=default&tilematrixset=c&Service=WMTS&Request=GetTile&Version=1.0.0&Format=tiles&TileMatrix={z}&TileCol={x}&TileRow={y}&tk=ac2691809b5dd7ee20869f7a6ba2abc4", {
+            "http://t0.tianditu.gov.cn/vec_c/wmts?layer=vec&style=default&tilematrixset=c&Service=WMTS&Request=GetTile&Version=1.0.0&Format=tiles&TileMatrix={z}&TileCol={x}&TileRow={y}&tk=fae2cd87e1fa8bb1b068714d764a78a9", {
                 maxZoom: 20,
                 tileSize: 256,
                 zoomOffset: 1,
                 minZoom: 3
             })
         let tiandituMark = L.tileLayer(
-            "http://t1.tianditu.com/cva_c/wmts?layer=cva&style=default&tilematrixset=c&Service=WMTS&Request=GetTile&Version=1.0.0&Format=tiles&TileMatrix={z}&TileCol={x}&TileRow={y}&tk=ac2691809b5dd7ee20869f7a6ba2abc4", {
+            "http://t1.tianditu.com/cva_c/wmts?layer=cva&style=default&tilematrixset=c&Service=WMTS&Request=GetTile&Version=1.0.0&Format=tiles&TileMatrix={z}&TileCol={x}&TileRow={y}&tk=fae2cd87e1fa8bb1b068714d764a78a9", {
                 maxZoom: 20,
                 tileSize: 256,
                 zoomOffset: 1,
@@ -49,6 +69,21 @@
             })
         myMap.addLayer(tiandituLayer);
         myMap.addLayer(tiandituMark);
+
+        //添加鹰眼
+        let normalm = L.tileLayer(
+            "http://t0.tianditu.gov.cn/img_c/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=img&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&tk=fae2cd87e1fa8bb1b068714d764a78a9", {
+                maxZoom: 20,
+                tileSize: 256,
+                zoomOffset: 1,
+                zIndex: 5,
+                minZoom: 3
+            })
+        const miniMap = new L.Control.MiniMap(normalm, {
+            position: 'bottomright',
+            toggleDisplay: true,
+            autoToggleDisplay: true
+        }).addTo(myMap)
     }
 
     addSST()
