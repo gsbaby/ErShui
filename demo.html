@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"></script>
+  <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.7.1/jquery.js"></script>
+  <script src="https://unpkg.com/leaflet-ant-path" type="text/javascript"></script>
+</head>
+
+<body>
+  <div id='map' style="width:100%;min-height:300px;height:100%"></div>
+  <div>
+    <button onclick="tag1()">流动效果</button>
+    <button onclick="tag2()">管线</button>
+  </div>
+  <script>
+    let map = L.map('map', {
+      center: [29.516916275024414, 106.52285814285278],
+      maxZoom: 24,
+      zoom: 16,   //缩放比列
+      crs: L.CRS.EPSG4326,
+      zoomControl: false, //禁用 + - 按钮
+      doubleClickZoom: false,  // 禁用双击放大
+      attribution: '',
+      attributionControl: false  // 移除右下角leaflet标识sxx
+    })
+    map.on('click', (e) => {
+      console.log(e)
+    });
+    function addSST() {	//加载天地图
+      let tiandituLayer = L.tileLayer(
+        "http://t0.tianditu.gov.cn/vec_c/wmts?layer=vec&style=default&tilematrixset=c&Service=WMTS&Request=GetTile&Version=1.0.0&Format=tiles&TileMatrix={z}&TileCol={x}&TileRow={y}&tk=ac2691809b5dd7ee20869f7a6ba2abc4", {
+        maxZoom: 20,
+        tileSize: 256,
+        zoomOffset: 1,
+        minZoom: 3
+      })
+      let tiandituMark = L.tileLayer(
+        "http://t1.tianditu.com/cva_c/wmts?layer=cva&style=default&tilematrixset=c&Service=WMTS&Request=GetTile&Version=1.0.0&Format=tiles&TileMatrix={z}&TileCol={x}&TileRow={y}&tk=ac2691809b5dd7ee20869f7a6ba2abc4", {
+        maxZoom: 20,
+        tileSize: 256,
+        zoomOffset: 1,
+        zIndex: 5,
+        minZoom: 3
+      })
+      map.addLayer(tiandituLayer);
+      map.addLayer(tiandituMark);
+
+    }
+    //let key = row.pkCode ? `pkbm ='${row.pkCode}'` : `pkmc='${row.name}'`;
+    key = `pkbm ='FA-500107-0002-YH-00'`;
+    let url1 = `http://120.78.84.109:8089/geoserver/JLPGIS/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=JLPGIS%3Aykyt-psfx&maxFeatures=999999
+      &outputFormat=application%2Fjson&CQL_FILTER=${key}`;
+    let LJoOtletTraceLayer = null;
+    let data = [];
+    const antPathFn = data => {
+      console.log(data)
+      let antPath = L.polyline.antPath;
+      return antPath(data, {
+        paused: false, //暂停  初始化状态
+        reverse: true, //方向反转
+        delay: 6000, //延迟，数值越大效果越缓慢
+        dashArray: [10, 50], //间隔样式
+        weight: 4, //线宽
+        opacity: 0.9, //透明度
+        color: "#4875D5",
+        pulseColor: "#fff"
+      }).addTo(map);
+    };
+    addSST()
+    tag1()
+    let data1 = []
+    function tag1() {
+    //通过变量来判断及删除
+      if (map.hasLayer(LJoOtletTraceLayer)) {　
+        console.log('地图中存在标记图层');
+        map.removeLayer(LJoOtletTraceLayer  )
+      } else {
+        console.log('地图中不存在标记图层');
+      }
+      $.ajax({
+        url: url1, // 设置请求的URL地址
+        method: "GET", // 设置请求的方法（GET、POST等）
+        dataType: "json", // 设置返回结果的类型为JSON格式
+        data: {},
+        success: function (response) {
+          // 当请求成功时触发的回调函数
+          console.log(response); // 输出服务器返回的数据
+
+          L.geoJSON(response.features, {
+            onEachFeature: (feature, layer) => {
+              feature.geometry.coordinates[0].forEach(function (e, i) {
+                data.push([e[1], e[0]]);
+              });
+              data1.push(feature.geometry.coordinates.map(item => {
+                // console.log(item)
+                return reverse2DArray(item)
+                // item.reverse()
+              }))
+            }
+          });
+          console.log("data--=-", data);
+          console.log("data1--=-", data1);
+          LJoOtletTraceLayer = antPathFn(data1);
+          /* let pwk = L.geoJSON(response.features, {
+            pointToLayer: function (geoJsonPoint, latlng) {
+              return L.circleMarker(latlng);
+            },
+            style: function (feature) {
+              return { color: "blue" };
+            }
+          }).addTo(map); */
+        },
+        error: function () {
+          // 当请求失败时触发的回调函数
+          console.error("请求失败！");
+        }
+      });
+    }
+    function reverse2DArray(arr) {
+      // 遍历二维数组，将每个一维数组进行翻转
+      for (let i = 0; i < arr.length; i++) {
+        arr[i].reverse();
+      }
+      // 将翻转后的二维数组进行逆序排列
+      arr.reverse();
+      return arr;
+    }
+    function tag2() {
+      var jlpmask = L.tileLayer
+        .wms('http://120.78.84.109:8089' + "/geoserver/JLPGIS/wms", {
+          id: "ykyt",
+          layers: "JLPGIS:ykyt-psfx", //需要加载的图层
+          format: "image/png", //返回的数据格式
+          transparent: true,
+          maxZoom: 24,
+          crs: L.CRS.EPSG4326,
+          CQL_FILTER: key,
+        })
+        .addTo(map);
+    }
+    function tag3() {
+      // map.hasLayer("ykyt") && map.removeLayer("ykyt")
+      $.ajax({
+        url: url1, // 设置请求的URL地址
+        method: "GET", // 设置请求的方法（GET、POST等）
+        dataType: "json", // 设置返回结果的类型为JSON格式
+        data: {},
+        success: function (response) {
+          // 当请求成功时触发的回调函数
+          console.log(response); // 输出服务器返回的数据
+
+          // LJoOtletTraceLayer = antPathFn(data);
+          let pwk = L.geoJSON(response.features, {
+            style: function (feature) {
+              return { color: "blue" };
+            }
+          }).addTo(map);
+        },
+        error: function () {
+          // 当请求失败时触发的回调函数
+          console.error("请求失败！");
+        }
+      });
+    }
+
+  </script>
+</body>
+
+</html>

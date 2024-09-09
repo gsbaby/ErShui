@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+
+    <link rel="stylesheet" href="./leaflet/leaflet.css"/>
+    <script src="./leaflet/leaflet.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.7.1/jquery.js"></script>
+    <script src="./leaflet/leaflet-ant-path.js" type="text/javascript"></script>
+
+</head>
+<body>
+<div id='map' style="width:100%;min-height:600px;height:100%"></div>
+<div>
+    <button onclick="tag1()">流动效果</button>
+    <button onclick="tag2()">管线</button>
+</div>
+<script>
+    let myMap = L.map('map', {
+        center: [31.246318817138672, 118.16216468811035],
+        maxZoom: 24,
+        zoom: 15,   //缩放比列
+        crs: L.CRS.EPSG4326,
+        zoomControl: false, //禁用 + - 按钮
+        doubleClickZoom: false,  // 禁用双击放大
+        attribution: '',
+        attributionControl: false  // 移除右下角leaflet标识sxx
+    })
+    myMap.on('click', (e) => {
+        console.log(e)
+    });
+
+    function addSST() {	//加载天地图
+        let tiandituLayer = L.tileLayer(
+            "http://t0.tianditu.gov.cn/vec_c/wmts?layer=vec&style=default&tilematrixset=c&Service=WMTS&Request=GetTile&Version=1.0.0&Format=tiles&TileMatrix={z}&TileCol={x}&TileRow={y}&tk=ac2691809b5dd7ee20869f7a6ba2abc4", {
+                maxZoom: 20,
+                tileSize: 256,
+                zoomOffset: 1,
+                minZoom: 3
+            })
+        let tiandituMark = L.tileLayer(
+            "http://t1.tianditu.com/cva_c/wmts?layer=cva&style=default&tilematrixset=c&Service=WMTS&Request=GetTile&Version=1.0.0&Format=tiles&TileMatrix={z}&TileCol={x}&TileRow={y}&tk=ac2691809b5dd7ee20869f7a6ba2abc4", {
+                maxZoom: 20,
+                tileSize: 256,
+                zoomOffset: 1,
+                zIndex: 5,
+                minZoom: 3
+            })
+        myMap.addLayer(tiandituLayer);
+        myMap.addLayer(tiandituMark);
+    }
+
+    addSST()
+
+    data_polyline = [
+        [31.241962909698486, 118.16064119338989], [31.244537830352783, 118.15800189971924], [31.24558925628662, 118.15686464309692],
+        [31.245224475860596, 118.15579175949097], [31.2461256980896, 118.15489053726196], [31.2481427192688, 118.1580662727356]
+    ]
+    const path = L.polyline.antPath(data_polyline, {
+        "delay": 800,
+        "dashArray": [
+            10,
+            20
+        ],
+        "weight": 5,
+        "color": "#0000FF",
+        "pulseColor": "#FFFFFF",
+        "paused": false,
+        "reverse": false,
+        "hardwareAccelerated": true
+    });
+
+    myMap.addLayer(path);
+    myMap.fitBounds(path.getBounds())
+
+</script>
+
+</body>
+</html>
