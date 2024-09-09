@@ -135,8 +135,8 @@
 	leaflet.Control.FullScreen = leaflet.Control.extend({
 		options: {
 			position: 'topleft',
-			title: 'Full Screen',
-			titleCancel: 'Exit Full Screen',
+			title: '全屏',
+			titleCancel: '退出全屏',
 			forceSeparateButton: false,
 			forcePseudoFullscreen: false,
 			fullscreenElement: false

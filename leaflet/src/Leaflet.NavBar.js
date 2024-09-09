@@ -9,9 +9,9 @@
       //center:,
       //zoom :,
       //bbox:, //Alternative to center/zoom for home button, takes precedence if included
-      forwardTitle: 'Go forward in map view history',
-      backTitle: 'Go back in map view history',
-      homeTitle: 'Go to home map view'
+      forwardTitle: '在地图视图历史记录中前进',
+      backTitle: '在地图视图历史记录中后退',
+      homeTitle: '转到起始地图视图'
     },
 
     onAdd: function(map) {

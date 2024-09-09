@@ -5490,7 +5490,7 @@
 
   		// @option zoomInTitle: String = 'Zoom in'
   		// The title set on the 'zoom in' button.
-  		zoomInTitle: 'Zoom in',
+  		zoomInTitle: '放大',
 
   		// @option zoomOutText: String = '<span aria-hidden="true">&#x2212;</span>'
   		// The text set on the 'zoom out' button.
@@ -5498,7 +5498,7 @@
 
   		// @option zoomOutTitle: String = 'Zoom out'
   		// The title set on the 'zoom out' button.
-  		zoomOutTitle: 'Zoom out'
+  		zoomOutTitle: '缩小'
   	},
 
   	onAdd: function (map) {

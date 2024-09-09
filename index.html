@@ -20,37 +20,44 @@
 <body style="height: 100vh;margin: 0;">
 <div id='map' style="width:100%;height:100%"></div>
 <script>
-    <!--  地图基础配置  -->
-    let myMap = L.map('map', {
-        center: [31.246511936187744, 118.15956830978394],
-        maxZoom: 24,
-        zoom: 16,   //缩放比列
-        crs: L.CRS.EPSG4326,
-        zoomControl: true, //禁用 + - 按钮
-        doubleClickZoom: false,  // 禁用双击放大
-        attribution: '',
-        attributionControl: false,  // 移除右下角leaflet标识sxx
-        fullscreenControl: true,
-        fullscreenControlOptions: {
+    let myMap = null
+
+    // 初始化地图
+    function mapInitFun() {
+        <!--  地图基础配置  -->
+        myMap = L.map('map', {
+            center: [31.246511936187744, 118.15956830978394],
+            maxZoom: 24,
+            zoom: 16,   //缩放比列
+            crs: L.CRS.EPSG4326,
+            zoomControl: true, //禁用 + - 按钮
+            doubleClickZoom: false,  // 禁用双击放大
+            attribution: '',
+            attributionControl: false,  // 移除右下角leaflet标识sxx
+            fullscreenControl: true,
+            fullscreenControlOptions: {
+                position: 'topleft'
+            }
+        })
+        // 导航栏
+        const navBar = L.control.navbar({
             position: 'topleft'
-        }
-    })
-    // 导航栏
-    const navBar = L.control.navbar({
-        position: 'topleft'
-    })
-    myMap.addControl(navBar)
-    // 比例尺
-    L.control.scale({
-        maxWidth: 200,
-        metric: true
-    }).addTo(myMap)
+        })
+        myMap.addControl(navBar)
+        // 比例尺
+        L.control.scale({
+            maxWidth: 100,
+            metric: true,
+            imperial: true,
+            updateWhenIdle: false
+        }).addTo(myMap)
 
+        myMap.on('click', (e) => {
+            console.log(e)
+        });
+    }
 
-    myMap.on('click', (e) => {
-        console.log(e)
-    });
-
+    // 加载天地图及鹰眼
     function addSST() {	//加载天地图
         let tiandituLayer = L.tileLayer(
             "http://t0.tianditu.gov.cn/vec_c/wmts?layer=vec&style=default&tilematrixset=c&Service=WMTS&Request=GetTile&Version=1.0.0&Format=tiles&TileMatrix={z}&TileCol={x}&TileRow={y}&tk=fae2cd87e1fa8bb1b068714d764a78a9", {
@@ -83,31 +90,96 @@
             position: 'bottomright',
             toggleDisplay: true,
             autoToggleDisplay: true
-        }).addTo(myMap)
+        })
+        miniMap.addTo(myMap)
     }
 
-    addSST()
+    // 添加动态路径线
+    function drawLineRuning(data_polyline) {
+        const path = L.polyline.antPath(data_polyline, {
+            "delay": 800,
+            "dashArray": [
+                10,
+                20
+            ],
+            "weight": 5,
+            "color": "#0000FF",
+            "pulseColor": "#FFFFFF",
+            "paused": false,
+            "reverse": false,
+            "hardwareAccelerated": true
+        });
 
-    data_polyline = [
+        myMap.addLayer(path);
+        myMap.fitBounds(path.getBounds())
+    }
+
+    // 添加点位信息
+    function drawPoint(points) {
+        for (let i = 0; i < points.length; i++) {
+            L.marker(points[i]).addTo(myMap)
+                .bindPopup(`测试点${i + 1}<br> 关卡${i + 1}`)
+            // .openPopup();
+        }
+    }
+
+    // 计算两点之间欧氏距离
+    function comDistance(point1, point2) {
+        let latlng = L.latLng(point1[0], point1[1]);
+        let latlng2 = L.latLng(point2[0], point2[1]);
+        let distance = latlng.distanceTo(latlng2);
+        return distance
+    }
+
+    // 定义闪烁函数
+    function startFlashing(layer, interval) {
+        setInterval(function () {
+            if (layer.options.opacity <= 0.5) {
+                layer.options.opacity = 1
+            }
+            layer.setOpacity(layer.options.opacity - 0.08);
+        }, interval);
+    }
+
+    // 闪烁点
+    function flashLayer(flashLocation) {
+        var customIcon = L.icon({
+            iconUrl: './leaflet/images/car.png', // 图标图片的URL
+            iconSize: [38, 38], // 图标的大小
+            // iconAnchor: [22, 94], // 图标的锚点，对应图片的位置
+            // popupAnchor: [-3, -76] // 弹出窗口的锚点
+        });        // 创建一个闪烁点的图层
+        var flashLayer = L.marker(flashLocation, {icon: customIcon}).addTo(myMap);
+        // 设置闪烁点的初始透明度和闪烁间隔
+        flashLayer.options.opacity = 0.5;
+        startFlashing(flashLayer, 100); // 每500毫秒闪烁一次
+    }
+
+    function startJs() {
+        mapInitFun()
+        addSST()
+    }
+
+    startJs()
+    // 站点数据
+    const stationPoints = [[31.245975494384766, 118.15727233886719], [31.246061325073242, 118.15529823303223], [31.24314308166504, 118.15969705581665]]
+    drawPoint(stationPoints)
+
+    // 轨迹数据
+    let data_polyline = [
         [31.241962909698486, 118.16064119338989], [31.244537830352783, 118.15800189971924], [31.24558925628662, 118.15686464309692],
         [31.245224475860596, 118.15579175949097], [31.2461256980896, 118.15489053726196], [31.2481427192688, 118.1580662727356]
     ]
-    const path = L.polyline.antPath(data_polyline, {
-        "delay": 800,
-        "dashArray": [
-            10,
-            20
-        ],
-        "weight": 5,
-        "color": "#0000FF",
-        "pulseColor": "#FFFFFF",
-        "paused": false,
-        "reverse": false,
-        "hardwareAccelerated": true
-    });
+    drawLineRuning(data_polyline)
 
-    myMap.addLayer(path);
-    myMap.fitBounds(path.getBounds())
+    // 车辆位置信息
+    let pointInfoCar = [31.245224475860596, 118.15579175949097]
+    flashLayer(pointInfoCar)
+    for (let pp in stationPoints) {
+        let distanceCar_stations = comDistance(pointInfoCar, stationPoints[pp])
+        console.log(distanceCar_stations.toFixed(2)+'米')
+    }
+
 
 </script>
 
