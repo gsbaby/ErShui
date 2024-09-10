@@ -10,11 +10,31 @@
     <link rel="stylesheet" href="./leaflet/Control.FullScreen.css"/>
 
     <script src="./leaflet/leaflet.js"></script>
+
+    <script src="./leaflet/leaflet-src.js" type="text/javascript"></script>
+    <script src="./leaflet/leaflet-trackplayer.umd.cjs" type="text/javascript"></script>
+    <script src="./leaflet/src/dat.gui.js" type="text/javascript"></script>
+    <script src="./leaflet/leaflet-reback.js" type="text/javascript"></script>
+
     <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.7.1/jquery.js"></script>
+
     <script src="./leaflet/leaflet-ant-path.js" type="text/javascript"></script>
     <script src="./leaflet/src/Leaflet.NavBar.js" type="text/javascript"></script>
     <script src="./leaflet/Control.MiniMap.min.js" type="text/javascript"></script>
     <script src="./leaflet/Control.FullScreen.js" type="text/javascript"></script>
+    <style>
+        .corner-element {
+            position: absolute; /* 绝对定位 */
+            z-index: 800;
+            border: none;
+            right: 20px; /* 右对齐 */
+            width: 85px; /* 容器宽度 */
+            height: 40px; /* 容器高度 */
+            background-color: #2cdffa; /* 背景颜色 */
+            color: white; /* 文字颜色 */
+            text-align: center; /* 文字居中 */
+        }
+    </style>
 
 </head>
 <body style="height: 100vh;margin: 0;">
@@ -114,12 +134,11 @@
         myMap.fitBounds(path.getBounds())
     }
 
-    // 添加点位信息
-    function drawPoint(points) {
-        for (let i = 0; i < points.length; i++) {
-            L.marker(points[i]).addTo(myMap)
-                .bindPopup(`测试点${i + 1}<br> 关卡${i + 1}`)
-            // .openPopup();
+    // 添加监测点位信息
+    function drawCheckPoint(pointsInfos) {
+        for (let i = 0; i < pointsInfos.length; i++) {
+            let markk = L.marker(pointsInfos[i]['point']).addTo(myMap)
+            markk.bindPopup(`监测点名称：${pointsInfos[i]['name']}`, {autoClose: false}).openPopup();
         }
     }
 
@@ -141,15 +160,30 @@
         }, interval);
     }
 
-    // 闪烁点
-    function flashLayer(flashLocation) {
+    // 车辆点位信息及闪烁点
+    function flashLayer(flashLocation, stationPoints) {
         var customIcon = L.icon({
             iconUrl: './leaflet/images/car.png', // 图标图片的URL
             iconSize: [38, 38], // 图标的大小
             // iconAnchor: [22, 94], // 图标的锚点，对应图片的位置
             // popupAnchor: [-3, -76] // 弹出窗口的锚点
         });        // 创建一个闪烁点的图层
-        var flashLayer = L.marker(flashLocation, {icon: customIcon}).addTo(myMap);
+        let disCartoCheckPoint = []
+        for (let pp in stationPoints) {
+            let distanceCar_stations = comDistance(flashLocation, stationPoints[pp]['point'])
+            disCartoCheckPoint.push(distanceCar_stations)
+            console.log(distanceCar_stations.toFixed(2) + '米')
+        }
+        let min = disCartoCheckPoint[0]; // 假设第一个元素为最小值
+        let minCheckoutPoint = 0
+        for (let i = 1; i < disCartoCheckPoint.length; i++) {
+            if (disCartoCheckPoint[i] < min) {
+                min = disCartoCheckPoint[i];
+                minCheckoutPoint = i
+            }
+        }
+        var flashLayer = L.marker(flashLocation, {icon: customIcon}).addTo(myMap)
+            .bindPopup(`距离最近点位为${stationPoints[minCheckoutPoint]['name']}<br>距离为${min.toFixed(2)}米`).openPopup();
         // 设置闪烁点的初始透明度和闪烁间隔
         flashLayer.options.opacity = 0.5;
         startFlashing(flashLayer, 100); // 每500毫秒闪烁一次
@@ -162,8 +196,18 @@
 
     startJs()
     // 站点数据
-    const stationPoints = [[31.245975494384766, 118.15727233886719], [31.246061325073242, 118.15529823303223], [31.24314308166504, 118.15969705581665]]
-    drawPoint(stationPoints)
+    const stationPoints = [
+        {
+            name: '1号点位',
+            point: [31.245975494384766, 118.15727233886719]
+        }, {
+            name: '2号点位',
+            point: [31.246061325073242, 118.15529823303223]
+        }, {
+            name: '3号点位',
+            point: [31.24314308166504, 118.15969705581665]
+        }]
+    drawCheckPoint(stationPoints)
 
     // 轨迹数据
     let data_polyline = [
@@ -174,11 +218,32 @@
 
     // 车辆位置信息
     let pointInfoCar = [31.245224475860596, 118.15579175949097]
-    flashLayer(pointInfoCar)
-    for (let pp in stationPoints) {
-        let distanceCar_stations = comDistance(pointInfoCar, stationPoints[pp])
-        console.log(distanceCar_stations.toFixed(2)+'米')
-    }
+    flashLayer(pointInfoCar, stationPoints)
+
+    // 控制轨迹
+    let pathGj = [
+        {
+            lat: 31.24340057373047,
+            lng: 118.16374182701111
+        },
+        {
+            lat: 31.24484896659851,
+            lng: 118.16172480583191
+        },
+        {
+            lat: 31.24689817428589,
+            lng: 118.15970778465271
+        },
+        {
+            lat: 31.248550415039062,
+            lng: 118.16276550292969
+        },
+        {
+            lat: 31.245932579040527,
+            lng: 118.16524386405945
+        }
+    ];
+    lineReback(myMap, pathGj)
 
 
 </script>
